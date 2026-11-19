@@ -180,7 +180,7 @@
   </footer>
 
   <script>
-    const API_BASE = (window.API_BASE_URL || (location.protocol.startsWith('http') ? location.origin : 'https://estatehighway.onrender.com')).replace(/\/+$/, '');
+    const API_BASE = 'https://estatehighway.onrender.com';
     const apiUrl = p => `${API_BASE}${p}`;
 
     async function runButtonAction(btn, fn) {
