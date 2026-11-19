@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Class Portal — Estate High School</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+  <nav class="bg-slate-900 border-b border-slate-800 px-3 sm:px-4 py-3 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h1 class="font-bold text-white text-sm sm:text-lg">Class Portal</h1>
+        <p id="cls-sub" class="text-xs text-sky-400">Estate High School • Roster, Subjects, Exams & Fees</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs">
+        <button id="btn-logout" onclick="logout(this)" class="hidden px-2.5 sm:px-3 py-1.5 rounded-lg bg-rose-600/20 border border-rose-500/40 disabled:opacity-60 text-rose-300">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden px-4 py-3 rounded-xl text-xs font-semibold shadow-xl border"></div>
+
+  <div id="edit-stu-modal" class="fixed inset-0 z-50 hidden bg-black/75 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 sm:p-6 space-y-3">
+      <h3 class="font-bold text-white text-base">Edit Student & Parent Details</h3>
+      <form onsubmit="saveEditedStudent(event)" class="space-y-3">
+        <input id="ed-id" type="hidden" />
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Admission Number</label>
+          <input id="ed-adm" type="text" required class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Student Full Name</label>
+          <input id="ed-name" type="text" required class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Parent / Guardian Name</label>
+          <input id="ed-gname" type="text" required class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Parent National ID</label>
+          <input id="ed-gid" type="text" required class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Parent Phone</label>
+          <input id="ed-gphone" type="text" required class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="document.getElementById('edit-stu-modal').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-slate-800 text-xs text-slate-300">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-xs font-semibold text-white">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <main class="max-w-7xl w-full mx-auto px-3 sm:px-4 py-6 flex-1">
+    <section id="login-box" class="max-w-md mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 mt-6">
+      <h2 class="text-lg sm:text-xl font-bold text-white mb-1">Estate High School — Class Sign In</h2>
+      <p class="text-xs text-slate-400 mb-4">Select your grade/class and enter the password set by Admin.</p>
+      <form onsubmit="handleClassLogin(event)" class="space-y-3">
+        <select id="login-cls-id" required class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white"></select>
+        <input id="login-cls-pass" type="password" required placeholder="Class Portal Password" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white" />
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white font-semibold text-sm">Open Class Portal</button>
+      </form>
+    </section>
+
+    <section id="cls-box" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex flex-wrap gap-1.5 sm:gap-2">
+          <button onclick="showTab('att')" id="t-att" class="tab px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-sky-600 text-white">Daily Attendance</button>
+          <button onclick="showTab('students')" id="t-students" class="tab px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300">Students & Subjects</button>
+          <button onclick="showTab('exams')" id="t-exams" class="tab px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300">Exams & Subject Comments</button>
+          <button onclick="showTab('fees')" id="t-fees" class="tab px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300">3-Term Fee Report</button>
+          <button onclick="showTab('notices')" id="t-notices" class="tab px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300">Class Announcements</button>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl text-xs self-start sm:self-auto">
+          <span class="text-slate-400">Academic Year:</span>
+          <select id="cls-year" onchange="renderAll()" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-sky-400 font-bold"></select>
+        </div>
+      </div>
+
+      <div id="p-att" class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-3">
+          <h3 class="font-bold text-white text-base">Mark Daily Class Attendance</h3>
+          <div class="flex flex-wrap gap-2">
+            <input id="att-date" type="date" onchange="renderAtt()" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+            <button onclick="saveAtt(this)" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white text-xs font-semibold">Save Attendance</button>
+          </div>
+        </div>
+        <div id="att-list" class="divide-y divide-slate-800 border border-slate-800 rounded-xl overflow-hidden"></div>
+      </div>
+
+      <div id="p-students" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="space-y-5">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+            <h3 class="font-bold text-white text-sm mb-3">Add New Student & Parent Details</h3>
+            <form onsubmit="addStudent(event)" class="space-y-2.5">
+              <input id="st-adm" type="text" required placeholder="Admission No (e.g. EHS/2026/010)" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+              <input id="st-name" type="text" required placeholder="Student Full Name" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+              <input id="st-gname" type="text" required placeholder="Parent / Guardian Name" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+              <input id="st-gid" type="text" required placeholder="Parent National ID No" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+              <input id="st-gphone" type="text" required placeholder="Parent Phone (+254...)" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+              <button type="submit" class="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white text-xs font-semibold">+ Add Student</button>
+            </form>
+          </div>
+
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+            <h3 class="font-bold text-white text-sm mb-1">Add New Subject to System</h3>
+            <p class="text-xs text-slate-400 mb-3">If a subject is not in the system, enter it here to make it available.</p>
+            <form onsubmit="addCustomSubject(event)" class="flex gap-2">
+              <input id="new-sub-name" type="text" required placeholder="e.g. Computer Studies" class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+              <button type="submit" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-semibold">+ Add</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5">
+          <h3 class="font-bold text-white text-sm mb-3">Class Students, Edit Details & Subject Assignment</h3>
+          <div id="students-list" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <div id="p-exams" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-5">
+        <form onsubmit="createExam(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-3 pb-4 border-b border-slate-800">
+          <input id="ex-name" type="text" required placeholder="Exam Name (e.g. End Term 1 Exam)" class="sm:col-span-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+          <select id="ex-term" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white">
+            <option value="1">Term 1</option><option value="2">Term 2</option><option value="3">Term 3</option>
+          </select>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white text-xs font-semibold">+ Create Exam</button>
+        </form>
+        <div class="flex flex-wrap justify-between items-center gap-3">
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-slate-400">Exam (Selected Year):</label>
+            <select id="ex-select" onchange="renderExamSheet()" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white"></select>
+          </div>
+          <button onclick="saveExamResults(this)" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-semibold">Save Marks & Subject Comments</button>
+        </div>
+        <div id="exam-sheet" class="space-y-4"></div>
+      </div>
+
+      <div id="p-fees" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5">
+        <h3 class="font-bold text-white text-base mb-3">3-Term Class Fee Report (Selected Year)</h3>
+        <div class="overflow-x-auto border border-slate-800 rounded-xl">
+          <table class="w-full text-left text-xs min-w-[620px]">
+            <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="p-3">Student</th>
+                <th class="p-3">Parent Name, ID & Phone</th>
+                <th class="p-3 text-right">Term 1</th>
+                <th class="p-3 text-right">Term 2</th>
+                <th class="p-3 text-right">Term 3</th>
+                <th class="p-3 text-right">Year Balance</th>
+              </tr>
+            </thead>
+            <tbody id="cls-fee-rows" class="divide-y divide-slate-800"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="p-notices" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+          <h3 class="font-bold text-white text-sm mb-3">Send Announcement to Class Students</h3>
+          <form onsubmit="sendClassNotice(event)" class="space-y-3">
+            <input id="cn-title" type="text" required placeholder="Title" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+            <textarea id="cn-msg" rows="4" required placeholder="Message for this class..." class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white"></textarea>
+            <button type="submit" class="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white text-xs font-semibold">Send to Class</button>
+          </form>
+        </div>
+        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5">
+          <h3 class="font-bold text-white text-sm mb-3">Sent Class Announcements</h3>
+          <div id="cn-list" class="space-y-3"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-800 bg-slate-900/70 py-4 px-4 text-center text-xs text-slate-400">
+    Powered by StackCrafts Studio
+  </footer>
+
+  <script>
+    const API_BASE = (window.API_BASE_URL || (location.protocol.startsWith('http') ? location.origin : 'http://localhost:3000')).replace(/\/+$/, '');
+    const apiUrl = p => `${API_BASE}${p}`;
+
+    async function runButtonAction(btn, fn) {
+      if (!btn || btn.dataset.busy === '1') return await fn();
+      const orig = btn.innerHTML;
+      btn.dataset.busy = '1';
+      btn.disabled = true;
+      btn.innerHTML = 'Processing...';
+      try {
+        return await fn();
+      } finally {
+        btn.disabled = false;
+        btn.dataset.busy = '0';
+        btn.innerHTML = orig;
+      }
+    }
+
+    async function runFormAction(e, fn) {
+      const btn = e.submitter || e.target.querySelector('button[type="submit"]');
+      await runButtonAction(btn, fn);
+    }
+
+    let DB = { settings: null, classes: [], students: [], attendance: [], payments: [], exams: [], examResults: [], announcements: [] };
+    let activeClassId = sessionStorage.getItem('cls_id') || '';
+    const today = () => new Date().toISOString().split('T')[0];
+
+    function toast(msg, err = false) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl text-xs font-semibold shadow-xl border ${
+        err ? 'bg-rose-950 border-rose-500 text-rose-200' : 'bg-emerald-950 border-emerald-500 text-emerald-200'
+      }`;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 3500);
+    }
+
+    async function initPublic() {
+      const res = await fetch(apiUrl('/api/state'));
+      DB = await res.json();
+      const schoolName = DB.settings?.school_name || 'Estate High School';
+      document.title = `Class Portal — ${schoolName}`;
+      document.getElementById('login-cls-id').innerHTML = DB.classes.map(c => `<option value="${c.id}">${c.name} (${c.teacher_name})</option>`).join('');
+
+      const years = DB.settings?.available_years || [2026];
+      const curYr = DB.settings?.current_year || years[years.length - 1];
+      const yrSel = document.getElementById('cls-year');
+      const prevYr = yrSel.value;
+      yrSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      yrSel.value = prevYr && years.includes(Number(prevYr)) ? prevYr : String(curYr);
+
+      if (activeClassId && DB.classes.some(c => c.id === activeClassId)) {
+        openDashboard();
+      }
+    }
+
+    async function handleClassLogin(e) {
+      e.preventDefault();
+      await runFormAction(e, async () => {
+        const classId = document.getElementById('login-cls-id').value;
+        const password = document.getElementById('login-cls-pass').value;
+        const res = await fetch(apiUrl('/api/auth/class'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ classId, password })
+        });
+        const data = await res.json();
+        if (!res.ok) return toast(data.error, true);
+        activeClassId = classId;
+        sessionStorage.setItem('cls_id', classId);
+        openDashboard();
+      });
+    }
+
+    function openDashboard() {
+      const schoolName = DB.settings?.school_name || 'Estate High School';
+      const cls = DB.classes.find(c => c.id === activeClassId);
+      document.getElementById('cls-sub').textContent = `${schoolName} • ${cls?.name || ''} • Teacher: ${cls?.teacher_name || ''}`;
+      document.getElementById('login-box').classList.add('hidden');
+      document.getElementById('cls-box').classList.remove('hidden');
+      document.getElementById('btn-logout').classList.remove('hidden');
+      document.getElementById('att-date').value = today();
+      renderAll();
+    }
+
+    function logout(btn) {
+      runButtonAction(btn, async () => {
+        sessionStorage.removeItem('cls_id');
+        location.reload();
+      });
+    }
+
+    function showTab(t) {
+      ['att', 'students', 'exams', 'fees', 'notices'].forEach(x => {
+        document.getElementById(`p-${x}`).classList.toggle('hidden', x !== t);
+        document.getElementById(`t-${x}`).className = x === t
+          ? 'tab px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-sky-600 text-white'
+          : 'tab px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300';
+      });
+    }
+
+    function renderAll() {
+      renderAtt(); renderStudents(); renderExamsDropdown(); renderClassFees(); renderNotices();
+    }
+
+    function renderAtt() {
+      const d = document.getElementById('att-date').value || today();
+      const sts = DB.students.filter(s => s.class_id === activeClassId);
+      document.getElementById('att-list').innerHTML = sts.map(s => {
+        const rec = DB.attendance.find(a => a.student_id === s.id && a.attendance_date === d);
+        const cur = rec?.status || 'Present';
+        return `<div class="p-3.5 bg-slate-950 flex flex-wrap justify-between items-center gap-2">
+          <div>
+            <p class="font-bold text-sm text-white">${s.full_name} <span class="text-xs font-normal text-slate-400">(${s.adm_no})</span></p>
+            <p class="text-xs text-slate-400">Parent: ${s.guardian_name} • ID: ${s.guardian_id_no} • ${s.guardian_phone}</p>
+          </div>
+          <div class="flex gap-2">
+            ${['Present', 'Late', 'Absent'].map(st => `
+              <label class="cursor-pointer">
+                <input type="radio" name="a-${s.id}" value="${st}" ${cur === st ? 'checked' : ''} class="sr-only peer" />
+                <span class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-900 text-slate-400 peer-checked:bg-sky-600 peer-checked:text-white peer-checked:border-sky-500">${st}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    async function saveAtt(btn) {
+      await runButtonAction(btn, async () => {
+        const d = document.getElementById('att-date').value || today();
+        const yr = Number(document.getElementById('cls-year').value || new Date(d).getFullYear());
+        const sts = DB.students.filter(s => s.class_id === activeClassId);
+        const records = sts.map(s => ({
+          student_id: s.id, class_id: activeClassId, academic_year: yr, attendance_date: d,
+          status: document.querySelector(`input[name="a-${s.id}"]:checked`)?.value || 'Present'
+        }));
+        const res = await fetch(apiUrl('/api/class/attendance'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ records })
+        });
+        if (!res.ok) return toast('Failed to save attendance', true);
+        toast('Attendance saved!');
+        await initPublic();
+      });
+    }
+
+    async function addStudent(e) {
+      e.preventDefault();
+      await runFormAction(e, async () => {
+        const res = await fetch(apiUrl('/api/class/students'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            adm_no: document.getElementById('st-adm').value,
+            full_name: document.getElementById('st-name').value,
+            class_id: activeClassId,
+            guardian_name: document.getElementById('st-gname').value,
+            guardian_id_no: document.getElementById('st-gid').value,
+            guardian_phone: document.getElementById('st-gphone').value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) return toast(data.error, true);
+        e.target.reset();
+        toast('Student added!');
+        await initPublic();
+      });
+    }
+
+    function openEditStudentModal(id) {
+      const s = DB.students.find(x => x.id === id);
+      if (!s) return;
+      document.getElementById('ed-id').value = s.id;
+      document.getElementById('ed-adm').value = s.adm_no;
+      document.getElementById('ed-name').value = s.full_name;
+      document.getElementById('ed-gname').value = s.guardian_name;
+      document.getElementById('ed-gid').value = s.guardian_id_no;
+      document.getElementById('ed-gphone').value = s.guardian_phone;
+      document.getElementById('edit-stu-modal').classList.remove('hidden');
+    }
+
+    async function saveEditedStudent(e) {
+      e.preventDefault();
+      await runFormAction(e, async () => {
+        const id = document.getElementById('ed-id').value;
+        const res = await fetch(apiUrl(`/api/class/students/${id}`), {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            adm_no: document.getElementById('ed-adm').value,
+            full_name: document.getElementById('ed-name').value,
+            guardian_name: document.getElementById('ed-gname').value,
+            guardian_id_no: document.getElementById('ed-gid').value,
+            guardian_phone: document.getElementById('ed-gphone').value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) return toast(data.error, true);
+        document.getElementById('edit-stu-modal').classList.add('hidden');
+        toast('Student & parent details updated!');
+        await initPublic();
+      });
+    }
+
+    async function addCustomSubject(e) {
+      e.preventDefault();
+      await runFormAction(e, async () => {
+        const subject_name = document.getElementById('new-sub-name').value.trim();
+        const res = await fetch(apiUrl('/api/class/subjects'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subject_name })
+        });
+        if (!res.ok) return toast('Failed to add subject', true);
+        e.target.reset();
+        toast(`Subject "${subject_name}" added to system!`);
+        await initPublic();
+      });
+    }
+
+    async function toggleSub(btn, studentId, sub) {
+      await runButtonAction(btn, async () => {
+        const stu = DB.students.find(s => s.id === studentId);
+        const cur = Array.isArray(stu.subjects) ? [...stu.subjects] : [];
+        const next = cur.includes(sub) ? cur.filter(x => x !== sub) : [...cur, sub];
+        const res = await fetch(apiUrl(`/api/class/students/${studentId}/subjects`), {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subjects: next })
+        });
+        if (!res.ok) return toast('Subject update failed', true);
+        await initPublic();
+      });
+    }
+
+    function renderStudents() {
+      const allSubs = DB.settings?.custom_subjects || ['Mathematics', 'English', 'Kiswahili', 'Biology', 'Chemistry', 'Physics'];
+      const sts = DB.students.filter(s => s.class_id === activeClassId);
+      document.getElementById('students-list').innerHTML = sts.map(s => {
+        const subs = Array.isArray(s.subjects) ? s.subjects : [];
+        return `<div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
+          <div class="flex flex-wrap justify-between items-start gap-2">
+            <div>
+              <p class="font-bold text-sm text-white">${s.full_name} <span class="text-xs text-sky-300">(${s.adm_no})</span></p>
+              <p class="text-xs text-slate-300">Parent: <b>${s.guardian_name}</b> • ID: <span class="font-mono text-amber-300">${s.guardian_id_no}</span> • Phone: <span class="text-emerald-300">${s.guardian_phone}</span></p>
+            </div>
+            <button onclick="openEditStudentModal('${s.id}')" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 text-xs font-semibold">
+              Edit Details
+            </button>
+          </div>
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            ${allSubs.map(sub => {
+              const active = subs.includes(sub);
+              return `<button onclick="toggleSub(this, '${s.id}', '${sub.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg text-[11px] border disabled:opacity-60 ${
+                active ? 'bg-sky-600/20 border-sky-500 text-sky-300' : 'bg-slate-900 border-slate-800 text-slate-500'
+              }">${active ? '✓ ' : '+ '}${sub}</button>`;
+            }).join('')}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    async function createExam(e) {
+      e.preventDefault();
+      await runFormAction(e, async () => {
+        const yr = Number(document.getElementById('cls-year').value || 2026);
+        const res = await fetch(apiUrl('/api/class/exams'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            class_id: activeClassId,
+            academic_year: yr,
+            exam_name: document.getElementById('ex-name').value,
+            term: Number(document.getElementById('ex-term').value),
+            exam_date: today()
+          })
+        });
+        if (!res.ok) return toast('Failed to create exam', true);
+        e.target.reset();
+        toast(`Exam created for Year ${yr}!`);
+        await initPublic();
+      });
+    }
+
+    function renderExamsDropdown() {
+      const yr = Number(document.getElementById('cls-year').value || 2026);
+      const exs = DB.exams.filter(e => e.class_id === activeClassId && Number(e.academic_year || 2026) === yr);
+      const sel = document.getElementById('ex-select');
+      const prev = sel.value;
+      sel.innerHTML = exs.length ? exs.map(e => `<option value="${e.id}">${e.exam_name} (Term ${e.term} • ${yr})</option>`).join('') : `<option value="">No exams for ${yr}</option>`;
+      if (prev && exs.some(e => e.id === prev)) sel.value = prev;
+      renderExamSheet();
+    }
+
+    function perfLevel(avg) {
+      if (avg >= 80) return 'EE';
+      if (avg >= 60) return 'ME';
+      if (avg >= 40) return 'AE';
+      return 'BE';
+    }
+
+    function renderExamSheet() {
+      const examId = document.getElementById('ex-select').value;
+      const box = document.getElementById('exam-sheet');
+      if (!examId) { box.innerHTML = '<p class="text-xs text-slate-500">Create an exam above to enter marks and per-subject teacher comments.</p>'; return; }
+      const sts = DB.students.filter(s => s.class_id === activeClassId);
+      box.innerHTML = sts.map(s => {
+        const res = DB.examResults.find(r => r.exam_id === examId && r.student_id === s.id);
+        const marks = res?.marks || {};
+        const subComs = res?.subject_comments || {};
+        const subs = Array.isArray(s.subjects) ? s.subjects : [];
+        return `<div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+          <div class="flex flex-wrap justify-between items-center gap-2">
+            <span class="font-bold text-sm text-white">${s.full_name} (${s.adm_no})</span>
+            <span id="esum-${s.id}" class="text-xs font-bold text-emerald-400">Total: ${res?.total_marks ?? 0} | Avg: ${res?.average_marks ?? 0}% (${res?.performance_level ?? '-'})</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            ${subs.map(sub => `<div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+              <div class="flex items-center justify-between gap-2">
+                <label class="text-xs font-semibold text-sky-300">${sub}</label>
+                <input type="number" min="0" max="100" data-st="${s.id}" data-sub="${sub}" value="${marks[sub] ?? ''}" oninput="recalc('${s.id}')" placeholder="Marks %"
+                  class="m-inp w-24 px-2 py-1 rounded bg-slate-950 border border-slate-700 text-xs text-right text-white" />
+              </div>
+              <input type="text" data-com-st="${s.id}" data-com-sub="${sub}" value="${subComs[sub] ?? ''}" placeholder="Teacher comment for ${sub}..."
+                class="sub-com-inp w-full px-2.5 py-1 rounded bg-slate-950 border border-slate-800 text-[11px] text-slate-200" />
+            </div>`).join('')}
+          </div>
+          <input type="text" id="ecom-${s.id}" value="${res?.teacher_comment || ''}" placeholder="Overall Class Teacher Comment..." class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white" />
+        </div>`;
+      }).join('');
+    }
+
+    function recalc(studentId) {
+      const inps = [...document.querySelectorAll(`.m-inp[data-st="${studentId}"]`)];
+      let tot = 0, cnt = 0;
+      inps.forEach(i => { if (i.value !== '') { tot += Number(i.value); cnt++; } });
+      const avg = cnt ? +(tot / cnt).toFixed(1) : 0;
+      document.getElementById(`esum-${studentId}`).textContent = `Total: ${tot} | Avg: ${avg}% (${cnt ? perfLevel(avg) : '-'})`;
+    }
+
+    async function saveExamResults(btn) {
+      await runButtonAction(btn, async () => {
+        const examId = document.getElementById('ex-select').value;
+        if (!examId) return;
+        const sts = DB.students.filter(s => s.class_id === activeClassId);
+        const results = sts.map(s => {
+          const inps = [...document.querySelectorAll(`.m-inp[data-st="${s.id}"]`)];
+          const comInps = [...document.querySelectorAll(`.sub-com-inp[data-com-st="${s.id}"]`)];
+          const marks = {};
+          const subject_comments = {};
+          let tot = 0, cnt = 0;
+          inps.forEach(i => { if (i.value !== '') { marks[i.dataset.sub] = Number(i.value); tot += Number(i.value); cnt++; } });
+          comInps.forEach(c => { if (c.value.trim()) subject_comments[c.dataset.comSub] = c.value.trim(); });
+          const avg = cnt ? +(tot / cnt).toFixed(1) : 0;
+          return {
+            exam_id: examId, student_id: s.id, marks, subject_comments, total_marks: tot, average_marks: avg,
+            performance_level: cnt ? perfLevel(avg) : 'BE',
+            teacher_comment: document.getElementById(`ecom-${s.id}`).value.trim()
+          };
+        });
+        const res = await fetch(apiUrl('/api/class/exam-results'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ results })
+        });
+        if (!res.ok) return toast('Failed to save results', true);
+        toast('Exam marks & per-subject comments saved!');
+        await initPublic();
+      });
+    }
+
+    function renderClassFees() {
+      const yr = Number(document.getElementById('cls-year').value || 2026);
+      const rates = DB.settings?.term_fees || {};
+      const sts = DB.students.filter(s => s.class_id === activeClassId);
+      document.getElementById('cls-fee-rows').innerHTML = sts.map(s => {
+        const excl = s.excluded_categories || {};
+        const termBill = Object.entries(rates).reduce((sum, [k, v]) => excl[k] ? sum : sum + Number(v || 0), 0);
+        const sp = DB.payments.filter(p => p.student_id === s.id && Number(p.academic_year || 2026) === yr);
+        const t1 = sp.filter(p => p.term === 1).reduce((a, b) => a + Number(b.amount), 0);
+        const t2 = sp.filter(p => p.term === 2).reduce((a, b) => a + Number(b.amount), 0);
+        const t3 = sp.filter(p => p.term === 3).reduce((a, b) => a + Number(b.amount), 0);
+        const bal = Math.max(0, (termBill * 3) - (t1 + t2 + t3));
+        return `<tr>
+          <td class="p-3 font-semibold text-white">${s.full_name} (${s.adm_no})</td>
+          <td class="p-3 text-slate-300">${s.guardian_name} • ID: ${s.guardian_id_no} • ${s.guardian_phone}</td>
+          <td class="p-3 text-right text-emerald-300">${t1.toLocaleString()}</td>
+          <td class="p-3 text-right text-emerald-300">${t2.toLocaleString()}</td>
+          <td class="p-3 text-right text-emerald-300">${t3.toLocaleString()}</td>
+          <td class="p-3 text-right font-bold ${bal > 0 ? 'text-amber-400' : 'text-emerald-400'}">KES ${bal.toLocaleString()}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function sendClassNotice(e) {
+      e.preventDefault();
+      await runFormAction(e, async () => {
+        const res = await fetch(apiUrl('/api/announcements'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: document.getElementById('cn-title').value,
+            message: document.getElementById('cn-msg').value,
+            target_scope: 'CLASS',
+            target_class_id: activeClassId,
+            sender_role: 'Class Teacher'
+          })
+        });
+        if (!res.ok) return toast('Failed to send notice', true);
+        e.target.reset();
+        toast('Class announcement sent!');
+        await initPublic();
+      });
+    }
+
+    function renderNotices() {
+      const list = DB.announcements.filter(a => a.target_scope === 'CLASS' && a.target_class_id === activeClassId);
+      document.getElementById('cn-list').innerHTML = list.length ? list.map(a => `
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+          <p class="font-bold text-sm text-white">${a.title}</p>
+          <p class="text-xs text-slate-300 mt-1">${a.message}</p>
+        </div>
+      `).join('') : '<p class="text-xs text-slate-500">No class announcements yet.</p>';
+    }
+
+    initPublic();
+  </script>
+</body>
+</html>
