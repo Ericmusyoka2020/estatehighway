@@ -100,7 +100,7 @@
   </footer>
 
   <script>
-    const API_BASE = (window.API_BASE_URL || (location.protocol.startsWith('http') ? location.origin : 'http://localhost:3000')).replace(/\/+$/, '');
+    const API_BASE = (window.API_BASE_URL || (location.protocol.startsWith('http') ? location.origin : 'https://estatehighway.onrender.com')).replace(/\/+$/, '');
     const apiUrl = p => `${API_BASE}${p}`;
 
     async function runButtonAction(btn, fn) {
