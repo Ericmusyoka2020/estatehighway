@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Portal — Estate High School</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+  <nav class="bg-slate-900 border-b border-slate-800 px-3 sm:px-4 py-3 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h1 class="font-bold text-white text-sm sm:text-lg">Admin Portal</h1>
+        <p id="school-sub" class="text-xs text-emerald-400">Estate High School • Multi-Year Oversight</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs">
+        <button id="btn-logout" onclick="logout(this)" class="hidden px-2.5 sm:px-3 py-1.5 rounded-lg bg-rose-600/20 border border-rose-500/40 disabled:opacity-60 text-rose-300">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden px-4 py-3 rounded-xl text-xs font-semibold shadow-xl border"></div>
+
+  <main class="max-w-7xl w-full mx-auto px-3 sm:px-4 py-6 flex-1">
+    <section id="login-box" class="max-w-md mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 mt-6">
+      <h2 class="text-lg sm:text-xl font-bold text-white mb-1">Estate High School — Admin Sign In</h2>
+      <p class="text-xs text-slate-400 mb-4">Username <code class="text-emerald-400">admin</code>, Password <code class="text-emerald-400">main</code></p>
+      <form onsubmit="handleAdminLogin(event)" class="space-y-3">
+        <input id="adm-user" type="text" required placeholder="Username (admin)" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white" />
+        <input id="adm-pass" type="password" required placeholder="Password (main)" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white" />
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white font-semibold text-sm">Sign In as Admin</button>
+      </form>
+    </section>
+
+    <section id="dashboard-box" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex flex-wrap gap-1.5 sm:gap-2">
+          <button onclick="showTab('fees')" id="t-fees" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white">Fees & Sorting</button>
+          <button onclick="showTab('attendance')" id="t-attendance" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300">Attendance & Absentees</button>
+          <button onclick="showTab('graduation')" id="t-graduation" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300">New Academic Year</button>
+          <button onclick="showTab('classes')" id="t-classes" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300">Grades & Passwords</button>
+          <button onclick="showTab('audits')" id="t-audits" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300">Clerks Alerts & Notices</button>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl text-xs self-start sm:self-auto">
+          <span class="text-slate-400">Academic Year:</span>
+          <select id="global-year" onchange="renderAll()" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-emerald-400 font-bold"></select>
+        </div>
+      </div>
+
+      <!-- 1. FEES WITH SORTING -->
+      <div id="p-fees" class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-5">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-white text-base">Fee Collections & Sorting</h2>
+            <p class="text-xs text-slate-400">Filter by date or full year, and sort by Class, Reason, Amount, or Date.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <select id="fee-scope" onchange="renderFees()" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white">
+              <option value="DATE">Specific Date</option>
+              <option value="YEAR">All Year Payments</option>
+            </select>
+            <input id="fee-date" type="date" onchange="renderFees()" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white" />
+            <select id="fee-class-filter" onchange="renderFees()" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white"></select>
+            <select id="fee-sort" onchange="renderFees()" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-emerald-300">
+              <option value="date_desc">Sort: Newest First</option>
+              <option value="amount_desc">Sort: Highest Amount</option>
+              <option value="amount_asc">Sort: Lowest Amount</option>
+              <option value="class_asc">Sort: Grade/Class (A–Z)</option>
+              <option value="reason_asc">Sort: Payment Reason (A–Z)</option>
+            </select>
+          </div>
+        </div>
+        <div id="fee-kpis" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+        <div id="fee-class-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        <div class="overflow-x-auto border border-slate-800 rounded-xl">
+          <table class="w-full text-left text-xs min-w-[680px]">
+            <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="p-3">Date</th>
+                <th class="p-3">Student</th>
+                <th class="p-3">Grade/Class</th>
+                <th class="p-3">Parent Name, ID & Phone</th>
+                <th class="p-3">Term</th>
+                <th class="p-3">Reason</th>
+                <th class="p-3 text-right">Amount (KES)</th>
+              </tr>
+            </thead>
+            <tbody id="fee-rows" class="divide-y divide-slate-800"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 2. ATTENDANCE & ABSENTEES WITH SORTING -->
+      <div id="p-attendance" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-5">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-white text-base">Class & Whole-School Attendance + Sorting</h2>
+            <p class="text-xs text-slate-400">Pick a date, filter by grade/class, and sort by attendance or absentees.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <input id="att-date" type="date" onchange="renderAttendance()" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white" />
+            <select id="att-class" onchange="renderAttendance()" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white"></select>
+            <select id="att-sort" onchange="renderAttendance()" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sky-300">
+              <option value="name_asc">Sort: Grade/Class (A–Z)</option>
+              <option value="present_desc">Sort: Highest Present</option>
+              <option value="absent_desc">Sort: Most Absent</option>
+            </select>
+          </div>
+        </div>
+        <div id="att-kpis" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div id="att-class-list" class="space-y-3"></div>
+          <div class="overflow-x-auto border border-slate-800 rounded-xl">
+            <table class="w-full text-left text-xs min-w-[500px]">
+              <thead class="bg-slate-950 text-rose-300 border-b border-slate-800">
+                <tr>
+                  <th class="p-3">Absent Student</th>
+                  <th class="p-3">Grade/Class</th>
+                  <th class="p-3">Parent Name</th>
+                  <th class="p-3">Parent ID</th>
+                  <th class="p-3">Parent Phone</th>
+                </tr>
+              </thead>
+              <tbody id="absent-rows" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. NEW ACADEMIC YEAR (3 TERMS, NO +1 GRADE CHANGE) -->
+      <div id="p-graduation" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4">
+          <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">Academic Year Rollover</span>
+          <h2 class="text-lg sm:text-xl font-bold text-white">Start New Academic Year (3 Terms)</h2>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Opens a new academic year (e.g. <b>2027</b>) with <b>Term 1, Term 2, and Term 3</b> ready for fee, attendance, and exam records while keeping all existing grade names unchanged.
+          </p>
+          <form onsubmit="graduateAllStudents(event)" class="space-y-3 pt-2">
+            <div>
+              <label class="block text-xs text-slate-300 mb-1">New Academic Year Name (e.g. 2027)</label>
+              <input id="grad-year" type="number" min="2020" max="2100" required placeholder="2027" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white" />
+            </div>
+            <button type="submit" class="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-60 text-white font-bold text-xs">
+              Initialize Academic Year & 3 Terms
+            </button>
+          </form>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-3">
+          <h3 class="font-bold text-white text-base">Active Academic Years & Grades</h3>
+          <p id="grad-years-list" class="text-xs text-emerald-400"></p>
+          <div id="grad-preview" class="space-y-2 pt-2"></div>
+        </div>
+      </div>
+
+      <!-- 4. CHANGE GRADE NAME, TEACHER & PASSWORD -->
+      <div id="p-classes" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="space-y-5">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+            <h3 class="font-bold text-white text-sm mb-3">School Name & Clerks Password</h3>
+            <form onsubmit="savePortalSettings(event)" class="space-y-3">
+              <input id="set-school-name" type="text" required placeholder="School Name" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+              <input id="set-clerks-pass" type="text" required placeholder="Clerks Password" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+              <button type="submit" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-semibold">Save Settings</button>
+            </form>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+            <h3 class="font-bold text-white text-sm mb-3">Add New Grade / Class & Password</h3>
+            <form onsubmit="addClass(event)" class="space-y-3">
+              <input id="cls-name" type="text" required placeholder="Grade/Class Name (e.g. Form 3 West)" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+              <input id="cls-teacher" type="text" required placeholder="Class Teacher Name" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+              <input id="cls-pass" type="text" required placeholder="Class Portal Password" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+              <button type="submit" class="w-full py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white text-xs font-semibold">+ Add Grade/Class</button>
+            </form>
+          </div>
+        </div>
+        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5">
+          <h3 class="font-bold text-white text-sm mb-3">Edit Grade/Class Name, Class Teacher & Portal Password</h3>
+          <div id="classes-manager-list" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- 5. CLERKS CHANGE NOTIFICATIONS & ANNOUNCEMENTS -->
+      <div id="p-audits" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+          <h3 class="font-bold text-white text-sm mb-3">Send Announcement to All Students</h3>
+          <form onsubmit="sendAllAnnouncement(event)" class="space-y-3">
+            <input id="ann-title" type="text" required placeholder="Title" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+            <textarea id="ann-msg" rows="4" required placeholder="Message for all students & guardians..." class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white"></textarea>
+            <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-semibold">Broadcast to All Students</button>
+          </form>
+        </div>
+
+        <div class="lg:col-span-2 space-y-5">
+          <div class="bg-slate-900 border border-amber-500/30 rounded-2xl p-5">
+            <h3 class="font-bold text-amber-300 text-sm mb-1">Clerks Fee & Exclusion Change Notifications</h3>
+            <p class="text-xs text-slate-400 mb-3">Automatic alerts whenever Clerks edit term fee rates, add emergency/extra charges, or exclude a student service.</p>
+            <div id="audit-list" class="space-y-2.5 max-h-72 overflow-y-auto"></div>
+          </div>
+
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+            <h3 class="font-bold text-white text-sm mb-3">Sent School-Wide Announcements</h3>
+            <div id="ann-list" class="space-y-2.5"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-800 bg-slate-900/70 py-4 px-4 text-center text-xs text-slate-400">
+    Powered by StackCrafts Studio
+  </footer>
+
+  <script>
+    const API_BASE = (window.API_BASE_URL || (location.protocol.startsWith('http') ? location.origin : 'http://localhost:3000')).replace(/\/+$/, '');
+    const apiUrl = p => `${API_BASE}${p}`;
+
+    async function runButtonAction(btn, fn) {
+      if (!btn || btn.dataset.busy === '1') return await fn();
+      const orig = btn.innerHTML;
+      btn.dataset.busy = '1';
+      btn.disabled = true;
+      btn.innerHTML = 'Processing...';
+      try {
+        return await fn();
+      } finally {
+        btn.disabled = false;
+        btn.dataset.busy = '0';
+        btn.innerHTML = orig;
+      }
+    }
+
+    async function runFormAction(e, fn) {
+      const btn = e.submitter || e.target.querySelector('button[type="submit"]');
+      await runButtonAction(btn, fn);
+    }
+
+    let DB = { settings: null, classes: [], students: [], attendance: [], payments: [], announcements: [] };
+    const today = () => new Date().toISOString().split('T')[0];
+
+    function toast(msg, err = false) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl text-xs font-semibold shadow-xl border ${
+        err ? 'bg-rose-950 border-rose-500 text-rose-200' : 'bg-emerald-950 border-emerald-500 text-emerald-200'
+      }`;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 3800);
+    }
+
+    async function handleAdminLogin(e) {
+      e.preventDefault();
+      await runFormAction(e, async () => {
+        const res = await fetch(apiUrl('/api/auth/admin'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('adm-user').value.trim(),
+            password: document.getElementById('adm-pass').value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) return toast(data.error, true);
+        sessionStorage.setItem('adm_auth', '1');
+        document.getElementById('login-box').classList.add('hidden');
+        document.getElementById('dashboard-box').classList.remove('hidden');
+        document.getElementById('btn-logout').classList.remove('hidden');
+        document.getElementById('fee-date').value = today();
+        document.getElementById('att-date').value = today();
+        await loadState();
+      });
+    }
+
+    function logout(btn) {
+      runButtonAction(btn, async () => {
+        sessionStorage.removeItem('adm_auth');
+        location.reload();
+      });
+    }
+
+    async function loadState() {
+      const res = await fetch(apiUrl('/api/state'));
+      DB = await res.json();
+      const years = DB.settings?.available_years || [2026];
+      const curYr = DB.settings?.current_year || years[years.length - 1];
+      const yrSel = document.getElementById('global-year');
+      const prevYr = yrSel.value;
+      yrSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      yrSel.value = prevYr && years.includes(Number(prevYr)) ? prevYr : String(curYr);
+      document.getElementById('grad-year').value = Number(curYr) + 1;
+
+      const schoolName = DB.settings?.school_name || 'Estate High School';
+      document.title = `Admin Portal — ${schoolName}`;
+      document.getElementById('school-sub').textContent = `${schoolName} • Active Year ${curYr}`;
+      document.getElementById('set-school-name').value = schoolName;
+      document.getElementById('set-clerks-pass').value = DB.settings?.clerks_password || '';
+
+      const clsOpts = `<option value="ALL">All Grades/Classes</option>` + DB.classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      document.getElementById('att-class').innerHTML = clsOpts;
+      document.getElementById('fee-class-filter').innerHTML = clsOpts;
+      renderAll();
+    }
+
+    function renderAll() {
+      renderFees();
+      renderAttendance();
+      renderGraduationPreview();
+      renderClassesManager();
+      renderAuditsAndAnnouncements();
+    }
+
+    function showTab(tab) {
+      ['fees', 'attendance', 'graduation', 'classes', 'audits'].forEach(t => {
+        document.getElementById(`p-${t}`).classList.toggle('hidden', t !== tab);
+        document.getElementById(`t-${t}`).className = t === tab
+          ? 'tab-btn px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white'
+          : 'tab-btn px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300';
+      });
+    }
+
+    function renderFees() {
+      const yr = Number(document.getElementById('global-year').value || 2026);
+      const scope = document.getElementById('fee-scope').value;
+      const d = document.getElementById('fee-date').value || today();
+      const clsFilter = document.getElementById('fee-class-filter').value;
+      const sortMode = document.getElementById('fee-sort').value;
+
+      let pays = DB.payments.filter(p => Number(p.academic_year || 2026) === yr);
+      if (scope === 'DATE') pays = pays.filter(p => p.payment_date === d);
+      if (clsFilter !== 'ALL') pays = pays.filter(p => p.class_id === clsFilter);
+
+      pays.sort((a, b) => {
+        if (sortMode === 'amount_desc') return Number(b.amount) - Number(a.amount);
+        if (sortMode === 'amount_asc') return Number(a.amount) - Number(b.amount);
+        if (sortMode === 'class_asc') {
+          const ca = DB.classes.find(c => c.id === a.class_id)?.name || '';
+          const cb = DB.classes.find(c => c.id === b.class_id)?.name || '';
+          return ca.localeCompare(cb);
+        }
+        if (sortMode === 'reason_asc') return a.category.localeCompare(b.category);
+        return (b.payment_date || '').localeCompare(a.payment_date || '');
+      });
+
+      const total = pays.reduce((s, p) => s + Number(p.amount), 0);
+      document.getElementById('fee-kpis').innerHTML = `
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5"><p class="text-xs text-slate-400">Collected (${scope === 'DATE' ? d : 'Year ' + yr})</p><p class="text-lg font-bold text-emerald-400">KES ${total.toLocaleString()}</p></div>
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5"><p class="text-xs text-slate-400">Receipts Count</p><p class="text-lg font-bold text-white">${pays.length}</p></div>
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5"><p class="text-xs text-slate-400">Academic Year</p><p class="text-lg font-bold text-sky-400">${yr}</p></div>
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5"><p class="text-xs text-slate-400">Active Grades/Classes</p><p class="text-lg font-bold text-white">${DB.classes.length}</p></div>
+      `;
+
+      document.getElementById('fee-class-cards').innerHTML = DB.classes.map(cls => {
+        const cp = pays.filter(p => p.class_id === cls.id);
+        const sum = cp.reduce((s, p) => s + Number(p.amount), 0);
+        const byR = {};
+        cp.forEach(p => {
+          const r = p.category === 'Other' && p.other_reason ? `Other (${p.other_reason})` : p.category;
+          byR[r] = (byR[r] || 0) + Number(p.amount);
+        });
+        return `<div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="font-bold text-sm text-white">${cls.name}</span>
+            <span class="text-xs font-bold text-emerald-400">KES ${sum.toLocaleString()}</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            ${Object.entries(byR).map(([r, v]) => `<span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-[11px] text-slate-300">${r}: <b>${v.toLocaleString()}</b></span>`).join('') || '<span class="text-xs text-slate-500">No payments</span>'}
+          </div>
+        </div>`;
+      }).join('');
+
+      document.getElementById('fee-rows').innerHTML = pays.length ? pays.map(p => {
+        const st = DB.students.find(s => s.id === p.student_id);
+        const cls = DB.classes.find(c => c.id === p.class_id);
+        const reason = p.category === 'Other' && p.other_reason ? `Other (${p.other_reason})` : p.category;
+        return `<tr>
+          <td class="p-3 text-slate-400">${p.payment_date}</td>
+          <td class="p-3 font-semibold text-white">${st ? `${st.full_name} (${st.adm_no})` : '-'}</td>
+          <td class="p-3 text-slate-300">${cls?.name || '-'}</td>
+          <td class="p-3 text-slate-300">${st ? `${st.guardian_name} • ID: ${st.guardian_id_no} • ${st.guardian_phone}` : '-'}</td>
+          <td class="p-3 text-slate-300">Term ${p.term}</td>
+          <td class="p-3 text-emerald-300">${reason}</td>
+          <td class="p-3 text-right font-bold text-emerald-400">${Number(p.amount).toLocaleString()}</td>
+        </tr>`;
+      }).join('') : `<tr><td colspan="7" class="p-4 text-center text-slate-500">No fee collections matching filter.</td></tr>`;
+    }
+
+    function renderAttendance() {
+      const d = document.getElementById('att-date').value || today();
+      const clsFilter = document.getElementById('att-class').value;
+      const sortMode = document.getElementById('att-sort').value;
+      const students = clsFilter === 'ALL' ? DB.students : DB.students.filter(s => s.class_id === clsFilter);
+      const dayAtt = DB.attendance.filter(a => a.attendance_date === d && (clsFilter === 'ALL' || a.class_id === clsFilter));
+      const present = dayAtt.filter(a => a.status === 'Present').length;
+      const absent = dayAtt.filter(a => a.status === 'Absent');
+
+      document.getElementById('att-kpis').innerHTML = `
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5"><p class="text-xs text-slate-400">Enrolled Scope</p><p class="text-lg font-bold text-white">${students.length}</p></div>
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5"><p class="text-xs text-slate-400">Present (${d})</p><p class="text-lg font-bold text-emerald-400">${present}</p></div>
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5"><p class="text-xs text-slate-400">Absent (${d})</p><p class="text-lg font-bold text-rose-400">${absent.length}</p></div>
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5"><p class="text-xs text-slate-400">Marked Records</p><p class="text-lg font-bold text-sky-400">${dayAtt.length}</p></div>
+      `;
+
+      let targetClasses = clsFilter === 'ALL' ? [...DB.classes] : DB.classes.filter(c => c.id === clsFilter);
+      targetClasses.sort((a, b) => {
+        const pa = dayAtt.filter(x => x.class_id === a.id && x.status === 'Present').length;
+        const pb = dayAtt.filter(x => x.class_id === b.id && x.status === 'Present').length;
+        const aba = dayAtt.filter(x => x.class_id === a.id && x.status === 'Absent').length;
+        const abb = dayAtt.filter(x => x.class_id === b.id && x.status === 'Absent').length;
+        if (sortMode === 'present_desc') return pb - pa;
+        if (sortMode === 'absent_desc') return abb - aba;
+        return a.name.localeCompare(b.name);
+      });
+
+      document.getElementById('att-class-list').innerHTML = targetClasses.map(c => {
+        const ca = dayAtt.filter(a => a.class_id === c.id);
+        const p = ca.filter(a => a.status === 'Present').length;
+        const ab = ca.filter(a => a.status === 'Absent').length;
+        const tot = DB.students.filter(s => s.class_id === c.id).length;
+        return `<div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 flex justify-between items-center gap-2">
+          <div><p class="font-bold text-sm text-white">${c.name}</p><p class="text-xs text-slate-400">Enrolled: ${tot} • Teacher: ${c.teacher_name}</p></div>
+          <div class="text-xs"><span class="text-emerald-400 font-bold">${p} Present</span> • <span class="text-rose-400 font-bold">${ab} Absent</span></div>
+        </div>`;
+      }).join('');
+
+      document.getElementById('absent-rows').innerHTML = absent.length ? absent.map(a => {
+        const st = DB.students.find(s => s.id === a.student_id);
+        const cls = DB.classes.find(c => c.id === a.class_id);
+        return `<tr>
+          <td class="p-3 font-semibold text-white">${st?.full_name || '-'} (${st?.adm_no || ''})</td>
+          <td class="p-3 text-slate-300">${cls?.name || '-'}</td>
+          <td class="p-3 text-slate-200">${st?.guardian_name || '-'}</td>
+          <td class="p-3 font-mono text-amber-300">${st?.guardian_id_no || '-'}</td>
+          <td class="p-3 text-emerald-300">${st?.guardian_phone || '-'}</td>
+        </tr>`;
+      }).join('') : `<tr><td colspan="5" class="p-4 text-center text-slate-500">No absent students recorded on ${d}.</td></tr>`;
+    }
+
+    async function graduateAllStudents(e) {
+      e.preventDefault();
+      await runFormAction(e, async () => {
+        const new_year = Number(document.getElementById('grad-year').value);
+        const res = await fetch(apiUrl('/api/admin/graduate'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ new_year })
+        });
+        const data = await res.json();
+        if (!res.ok) return toast(data.error, true);
+        toast(`Academic Year ${new_year} initialized with 3 terms!`);
+        await loadState();
+      });
+    }
+
+    function renderGraduationPreview() {
+      const years = DB.settings?.available_years || [2026];
+      document.getElementById('grad-years-list').textContent = `Configured Academic Years: ${years.join(', ')} (Current: ${DB.settings?.current_year || 2026})`;
+      document.getElementById('grad-preview').innerHTML = DB.classes.map(c => {
+        const cnt = DB.students.filter(s => s.class_id === c.id).length;
+        return `<div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex justify-between text-xs">
+          <span class="text-white font-semibold">${c.name}</span>
+          <span class="text-sky-300">${cnt} students • 3 Terms Active</span>
+        </div>`;
+      }).join('');
+    }
+
+    async function savePortalSettings(e) {
+      e.preventDefault();
+      await runFormAction(e, async () => {
+        const res = await fetch(apiUrl('/api/admin/passwords'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            school_name: document.getElementById('set-school-name').value,
+            clerks_password: document.getElementById('set-clerks-pass').value
+          })
+        });
+        if (!res.ok) return toast('Failed to save settings', true);
+        toast('School name & Clerks password updated!');
+        await loadState();
+      });
+    }
+
+    async function addClass(e) {
+      e.preventDefault();
+      await runFormAction(e, async () => {
+        const res = await fetch(apiUrl('/api/admin/classes'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: document.getElementById('cls-name').value,
+            teacher_name: document.getElementById('cls-teacher').value,
+            class_password: document.getElementById('cls-pass').value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) return toast(data.error, true);
+        e.target.reset();
+        toast('Grade/Class created!');
+        await loadState();
+      });
+    }
+
+    async function updateClassDetails(btn, id) {
+      await runButtonAction(btn, async () => {
+        const name = document.getElementById(`cname-${id}`).value.trim();
+        const teacher_name = document.getElementById(`cteacher-${id}`).value.trim();
+        const pass = document.getElementById(`cpass-${id}`).value;
+        const res = await fetch(apiUrl(`/api/admin/classes/${id}/password`), {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, teacher_name, class_password: pass })
+        });
+        const data = await res.json();
+        if (!res.ok) return toast(data.error || 'Update failed', true);
+        toast('Grade/Class name, teacher & password updated!');
+        await loadState();
+      });
+    }
+
+    function renderClassesManager() {
+      document.getElementById('classes-manager-list').innerHTML = DB.classes.map(c => `
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 flex-1">
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Grade / Class Name</label>
+              <input id="cname-${c.id}" type="text" value="${c.name}" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-semibold" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Class Teacher Name</label>
+              <input id="cteacher-${c.id}" type="text" value="${c.teacher_name || ''}" placeholder="Class Teacher Name" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white" />
+            </div>
+            <p class="sm:col-span-2 text-xs text-slate-400">Students: ${DB.students.filter(s => s.class_id === c.id).length}</p>
+          </div>
+          <div class="flex flex-wrap items-end gap-2">
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Portal Password</label>
+              <input id="cpass-${c.id}" type="text" value="${c.class_password}" placeholder="Password" class="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white w-36" />
+            </div>
+            <button onclick="updateClassDetails(this, '${c.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-semibold">Save Changes</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function sendAllAnnouncement(e) {
+      e.preventDefault();
+      await runFormAction(e, async () => {
+        const res = await fetch(apiUrl('/api/announcements'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: document.getElementById('ann-title').value,
+            message: document.getElementById('ann-msg').value,
+            target_scope: 'ALL',
+            sender_role: 'Administration'
+          })
+        });
+        if (!res.ok) return toast('Failed to send announcement', true);
+        e.target.reset();
+        toast('Announcement sent to all students!');
+        await loadState();
+      });
+    }
+
+    function renderAuditsAndAnnouncements() {
+      const audits = DB.announcements.filter(a => a.target_scope === 'ADMIN_LOG');
+      document.getElementById('audit-list').innerHTML = audits.length ? audits.map(a => `
+        <div class="bg-slate-950 border border-amber-500/20 rounded-xl p-3">
+          <div class="flex justify-between gap-2"><h4 class="font-bold text-xs text-amber-300">${a.title}</h4><span class="text-[10px] text-slate-500">${new Date(a.created_at).toLocaleString()}</span></div>
+          <p class="text-xs text-slate-300 mt-1">${a.message}</p>
+        </div>
+      `).join('') : '<p class="text-xs text-slate-500">No Clerks changes logged yet.</p>';
+
+      const list = DB.announcements.filter(a => a.target_scope === 'ALL');
+      document.getElementById('ann-list').innerHTML = list.length ? list.map(a => `
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3">
+          <div class="flex justify-between gap-2"><h4 class="font-bold text-xs text-white">${a.title}</h4><span class="text-[10px] text-slate-500">${new Date(a.created_at).toLocaleDateString()}</span></div>
+          <p class="text-xs text-slate-300 mt-1">${a.message}</p>
+        </div>
+      `).join('') : '<p class="text-xs text-slate-500">No announcements sent yet.</p>';
+    }
+
+    if (sessionStorage.getItem('adm_auth') === '1') {
+      document.getElementById('login-box').classList.add('hidden');
+      document.getElementById('dashboard-box').classList.remove('hidden');
+      document.getElementById('btn-logout').classList.remove('hidden');
+      document.getElementById('fee-date').value = today();
+      document.getElementById('att-date').value = today();
+      loadState();
+    }
+  </script>
+</body>
+</html>
