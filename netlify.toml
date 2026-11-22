@@ -1,0 +1,14 @@
+[build]
+  command = "echo \"window.API_BASE_URL = '$API_BASE_URL';\" > config.js"
+  publish = "."
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://estatehighway.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
